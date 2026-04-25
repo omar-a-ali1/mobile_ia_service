@@ -1,0 +1,12 @@
+python-dotenv
+numpy
+pandas
+opencv-python-headless
+scikit-learn
+scipy
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+requests
+httpx

@@ -10,3 +10,7 @@ sqlalchemy
 psycopg2-binary
 requests
 httpx
+dlib
+face_recognition_models
+face_recognition
+python-multipart

@@ -1,8 +1,10 @@
 from fastapi import APIRouter
-from ..controllers.health import health
+from numpy import rec
+
+# from src.routes.health_routes import router as health_router
+# from src.routes.camera_routes import router as camera_router
+from src.routes.recognition_routes import router as recognition_router
 
 router = APIRouter()
 
-@router.get("/health")
-def health_check():
-    return health()
+router.include_router(recognition_router)

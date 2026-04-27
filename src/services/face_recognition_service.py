@@ -7,6 +7,9 @@ from datetime import datetime
 UPLOAD_DIR = "uploads"
 
 async def match_face(file):
+    """
+    Matches a face in the given image file against the known encodings.
+    """
     contents = await file.read()
 
     # Convert to OpenCV image
@@ -53,3 +56,41 @@ async def match_face(file):
         }
 
     return {"status": "unknown"}
+    
+
+async def remove_face_from_database(name:str)->bool:
+    """
+        a function that removes a face from the database by name.
+    """
+    if not os.path.exists(os.path.join(UPLOAD_DIR, f"{name}.npy")):
+        return False
+    os.remove(os.path.join(UPLOAD_DIR, f"{name}.npy"))
+    return True
+    
+
+async def match_frame(frame, known_encodings, known_names):
+    """
+    Directly processes an OpenCV frame (BGR)
+    """
+    # 1. Resize frame to 1/4 size for faster processing
+    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    
+    # 2. Convert BGR to RGB
+    rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+    
+    # 3. Find encodings
+    encodings = face_recognition.face_encodings(rgb_small_frame)
+    
+    if not encodings:
+        return None
+
+    for unknown_encoding in encodings:
+        distances = face_recognition.face_distance(known_encodings, unknown_encoding)
+        best_index = np.argmin(distances)
+
+        if distances[best_index] < 0.6: # 0.6 is the standard threshold
+            return {
+                "name": known_names[best_index],
+                "time": datetime.now().isoformat()
+            }
+    return None

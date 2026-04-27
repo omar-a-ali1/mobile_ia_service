@@ -1,7 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, Form
 from src.controllers.recognition_controller import (
     register_face_controller,
-    match_face_controller
+    match_face_controller,
+    remove_face_controller,
 )
 
 router = APIRouter(prefix="/faces", tags=["Face Recognition"])
@@ -18,3 +19,7 @@ async def register(
 @router.post("/match")
 async def match(file: UploadFile = File(...)):
     return await match_face_controller(file)
+
+@router.delete("/remove")
+async def remove(name: str):
+    return await remove_face_controller(name)

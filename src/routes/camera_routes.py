@@ -1,40 +1,38 @@
+import os 
 from fastapi import APIRouter
-from src.services.camera_instance import camera_service
 from fastapi.responses import StreamingResponse
 import cv2
-import io
 
 router = APIRouter()
 
-@router.get("/frame")
-def get_frame():
-    frame = camera_service.get_frame()
+CAMERA_URL = os.environ.get("CAMERA_URL", "rtsp://username:password@ip_address:554/stream")
 
-    if frame is None:
-        return {"error": "no frame"}
-
-    _, buffer = cv2.imencode(".jpg", frame)
-    return StreamingResponse(
-        io.BytesIO(buffer.tobytes()),
-        media_type="image/jpeg"
-    )
+def gen_frames():
+    camera = cv2.VideoCapture(CAMERA_URL, cv2.CAP_FFMPEG)
     
+    # These flags help with "Premature End" errors
+    camera.set(cv2.CAP_PROP_BUFFERSIZE, 3)       
+    process_this_frame = True
 
-def generate():
     while True:
-        frame = camera_service.get_frame()
+        success, frame = camera.read()
+        if not success:
+            break
+        else:
+            # Only process every other frame to save CPU
+            if process_this_frame:
+                # Logic: Trigger match_frame here 
+                # (Ideally, use a background task or separate thread)
+                pass
+            
+            process_this_frame = not process_this_frame
 
-        if frame is None:
-            continue
+            # Encode for the web/mobile preview
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-        _, buffer = cv2.imencode(".jpg", frame)
-
-        yield (b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" +
-                buffer.tobytes() +
-                b"\r\n")
-
-@router.get("/live")
-def live():
-    return StreamingResponse(generate(),
-        media_type="multipart/x-mixed-replace; boundary=frame")
+@router.get("/video_feed")
+async def video_feed():
+    return StreamingResponse(gen_frames(), media_type="multipart/x-mixed-replace; boundary=frame")

@@ -14,3 +14,5 @@ dlib
 face_recognition_models
 face_recognition
 python-multipart
+pymongo
+pytest
